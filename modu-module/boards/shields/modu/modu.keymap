@@ -2,6 +2,8 @@
  * Copyright (c) 2026 EKS Inc.
  * Created by Ryu.
  * SPDX-License-Identifier: LicenseRef-EKS-NonCommercial-1.0
+ *
+ * See KEYMAP.md for the layout drawn out, including the Shift combinations.
  */
 
 #include <behaviors.dtsi>
@@ -18,23 +20,26 @@
         compatible = "zmk,keymap";
 
         default_layer {
-// -----------------------------------------------------------------
-// |ESC | 1  | 2  | 3  | 4  | 5  |   | 6  | 7  | 8  | 9  | 0  |DEL |
-// |TAB | Q  | W  | E  | R  | T  |   | Y  | U  | I  | O  | P  |HOME|
-// |CAPS| A  | S  | D  | F  | G  |   | H  | J  | K  | L  | ;  |PGUP|
-// |LSFT| Z  | X  | C  | V  | B  |   | N  | M  | ,  | .  | /  |PGDN|
-// |LCTL|LALT|LGUI|                                 |RALT|RCTL|END |
-//                |LANG|SPC |MO2 |   |BSPC|RET |MO2 | B  |
+// -----------------------------------------------------------------------
+// |ESC | 1  | 2  | 3  | 4  | 5  |   | 6  | 7  | 8  | 9  | 0  |BSPC|
+// |TAB | Q  | W  | E  | R  | T  |   | Y  | U  | I  | O  | P  | \  |
+// |CAPS| A  | S  | D  | F  | G  |   | H  | J  | K  | L  | ;  |RET |
+// |LSFT| Z  | X  | C  | V  | B  |   | N  | M  | ,  | .  | /  |RSFT|
+// |LCTL|LALT|LGUI|                            |RALT|RCTL|DEL |
+//            |MO  |SPC |RET |   |BSPC|SPC |MO  |////|
 //
-// Thumb keys 1 and 3 of each half are swapped at boot when P0.08 is grounded
-// (see alt_thumb_kscan), so the physical order becomes |MO2 |SPC |LANG|.
+// Hangul toggle is RALT on Windows and CAPS on macOS, matching what each
+// platform already uses. `\` doubles as the Won sign under a Hangul IME.
+//
+// The outermost key of the right thumb group (////) has no switch fitted -
+// the module takes up that end of the cluster - so it is left as &none.
             bindings = <
-&kp ESC   &kp N1   &kp N2    &kp N3    &kp N4    &kp N5      &kp N6    &kp N7    &kp N8    &kp N9    &kp N0    &kp DEL
-&kp TAB   &kp Q    &kp W     &kp E     &kp R     &kp T       &kp Y     &kp U     &kp I     &kp O     &kp P     &kp HOME
-&kp CAPS  &kp A    &kp S     &kp D     &kp F     &kp G       &kp H     &kp J     &kp K     &kp L     &kp SEMI  &kp PG_UP
-&kp LSHFT &kp Z    &kp X     &kp C     &kp V     &kp B       &kp N     &kp M     &kp COMMA &kp DOT   &kp FSLH  &kp PG_DN
-&kp LCTRL &kp LALT &kp LGUI  &none     &none     &none       &none     &none     &none     &kp RALT  &kp RCTRL &kp END
-                             &kp LANG1 &kp SPACE &mo LOWER   &kp BSPC  &kp RET   &mo LOWER &kp B
+&kp ESC   &kp N1   &kp N2    &kp N3    &kp N4    &kp N5      &kp N6    &kp N7    &kp N8    &kp N9    &kp N0     &kp BSPC
+&kp TAB   &kp Q    &kp W     &kp E     &kp R     &kp T       &kp Y     &kp U     &kp I     &kp O     &kp P      &kp BSLH
+&kp CAPS  &kp A    &kp S     &kp D     &kp F     &kp G       &kp H     &kp J     &kp K     &kp L     &kp SEMI   &kp RET
+&kp LSHFT &kp Z    &kp X     &kp C     &kp V     &kp B       &kp N     &kp M     &kp COMMA &kp DOT   &kp FSLH   &kp RSHFT
+&kp LCTRL &kp LALT &kp LGUI  &none     &none     &none       &none     &none     &none     &kp RALT  &kp RCTRL  &kp DEL
+                             &mo LOWER &kp SPACE &kp RET     &kp BSPC  &kp SPACE &mo LOWER &none
             >;
         };
 
@@ -45,36 +50,36 @@
          * stays &trans so the LOWER layer keeps working unchanged on top of it.
          * Only add keys here that must differ between Windows and macOS.
          *
-         * - Left thumb : LANG1 -> CAPS   (macOS toggles Hangul with Caps Lock;
-         *                                 the HID LANG1 key does nothing there)
-         * - Right mods : RALT/RCTRL -> RGUI/RALT
-         *                (mirrors the left half: the key next to the space
-         *                 is Command, the one outside it is Option)
+         * Right-hand mods: RALT/RCTRL -> RGUI/RALT, so the key beside the
+         * space bar is Command and the one outside it is Option, mirroring
+         * Ctrl/Option/Command on the left half.
          */
         mac_layer {
             bindings = <
-&trans    &trans   &trans    &trans    &trans    &trans      &trans    &trans    &trans    &trans    &trans    &trans
-&trans    &trans   &trans    &trans    &trans    &trans      &trans    &trans    &trans    &trans    &trans    &trans
-&trans    &trans   &trans    &trans    &trans    &trans      &trans    &trans    &trans    &trans    &trans    &trans
-&trans    &trans   &trans    &trans    &trans    &trans      &trans    &trans    &trans    &trans    &trans    &trans
-&trans    &trans   &trans    &trans    &trans    &trans      &trans    &trans    &trans    &kp RGUI  &kp RALT  &trans
-                             &kp CAPS  &trans    &trans      &trans    &trans    &trans    &trans
+&trans    &trans   &trans    &trans    &trans    &trans      &trans    &trans    &trans    &trans    &trans     &trans
+&trans    &trans   &trans    &trans    &trans    &trans      &trans    &trans    &trans    &trans    &trans     &trans
+&trans    &trans   &trans    &trans    &trans    &trans      &trans    &trans    &trans    &trans    &trans     &trans
+&trans    &trans   &trans    &trans    &trans    &trans      &trans    &trans    &trans    &trans    &trans     &trans
+&trans    &trans   &trans    &trans    &trans    &trans      &trans    &trans    &trans    &kp RGUI  &kp RALT   &trans
+                             &trans    &trans    &trans      &trans    &trans    &trans    &trans
             >;
         };
 
         lower_layer {
-// -----------------------------------------------------------------
+// -----------------------------------------------------------------------
 // | F1 | F2 | F3 | F4 | F5 | F6 |   | F7 | F8 | F9 |F10 |F11 |F12 |
-// |    |HOME| UP |END |    |    |   |MCLK| 7  | 8  | 9  | +  |BSPC|
-// |    |LEFT|DOWN|RGHT|    |    |   |RCLK| 4  | 5  | 6  | -  | ,  |
-// |BTCL|BT0 |BT1 |BT2 |MAC |    |   |LCLK| 1  | 2  | 3  | *  | .  |
-// |    |    |    |                            | 0  | /  |ENT |
+// |BTCL|BT0 |BT1 |BT2 |    |    |   |MCLK|    |    | `  | [  | ]  |
+// |    |    |    |    |    |    |   |RCLK|    |    | -  | =  | '  |
+// |    | UP |    |    |MAC |    |   |LCLK|    |    |    | UP |    |
+// |LEFT|DOWN|RGHT|                            |LEFT|DOWN|RGHT|
+//
+// Arrows form a proper cross on both halves: UP sits directly above DOWN.
             bindings = <
-&kp F1     &kp F2       &kp F3       &kp F4       &kp F5    &kp F6      &kp F7    &kp F8    &kp F9    &kp F10      &kp F11         &kp F12
-&trans     &kp HOME     &kp UP       &kp END      &trans    &trans      &mkp MCLK &kp KP_N7 &kp KP_N8 &kp KP_N9    &kp KP_PLUS     &kp BSPC
-&trans     &kp LEFT     &kp DOWN     &kp RIGHT    &trans    &trans      &mkp RCLK &kp KP_N4 &kp KP_N5 &kp KP_N6    &kp KP_MINUS    &kp KP_COMMA
-&bt BT_CLR &bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &tog MAC  &trans      &mkp LCLK &kp KP_N1 &kp KP_N2 &kp KP_N3    &kp KP_MULTIPLY &kp KP_DOT
-&trans     &trans       &trans       &trans       &trans    &trans      &trans    &trans    &trans    &kp KP_N0    &kp KP_DIVIDE   &kp KP_ENTER
+&kp F1     &kp F2       &kp F3       &kp F4       &kp F5    &kp F6      &kp F7    &kp F8    &kp F9    &kp F10    &kp F11    &kp F12
+&bt BT_CLR &bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &trans    &trans      &mkp MCLK &trans    &trans    &kp GRAVE  &kp LBKT   &kp RBKT
+&trans     &trans       &trans       &trans       &trans    &trans      &mkp RCLK &trans    &trans    &kp MINUS  &kp EQUAL  &kp SQT
+&trans     &kp UP       &trans       &trans       &tog MAC  &trans      &mkp LCLK &trans    &trans    &trans     &kp UP     &trans
+&kp LEFT   &kp DOWN     &kp RIGHT    &trans       &trans    &trans      &trans    &trans    &trans    &kp LEFT   &kp DOWN   &kp RIGHT
                                      &trans       &trans    &trans      &trans    &trans    &trans    &trans
             >;
         };
