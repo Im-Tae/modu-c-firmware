@@ -1,0 +1,28 @@
+config MODU_OS_MODE_PERSIST
+    bool "Remember the OS mode layer across reboots"
+    default n
+    depends on SETTINGS
+    help
+      Save the toggle state of the OS mode layer (macOS overlay) to settings
+      and restore it on the next boot, so the keyboard comes back up in the
+      mode it was left in.
+
+      Only meaningful on the split central, which is the half that resolves
+      the keymap.
+
+config MODU_OS_MODE_LAYER
+    int "Layer id of the OS mode overlay"
+    default 1
+    depends on MODU_OS_MODE_PERSIST
+    help
+      Must match the position of mac_layer in the keymap.
+
+config MODU_OS_MODE_SAVE_DEBOUNCE_MS
+    int "Milliseconds to debounce OS mode saves"
+    default 500
+    depends on MODU_OS_MODE_PERSIST
+    help
+      ZMK_SETTINGS_SAVE_DEBOUNCE defaults to 60s, which is tuned for settings
+      that change often. Toggling the OS mode is a rare, deliberate action and
+      the user may well power cycle right after it, so this is kept short
+      enough that the change survives an immediate reboot.

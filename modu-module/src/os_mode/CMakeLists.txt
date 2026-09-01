@@ -1,0 +1,2 @@
+zephyr_library()
+zephyr_library_sources_ifdef(CONFIG_MODU_OS_MODE_PERSIST os_mode.c)
