@@ -47,7 +47,9 @@
          *
          * - Left thumb : LANG1 -> CAPS   (macOS toggles Hangul with Caps Lock;
          *                                 the HID LANG1 key does nothing there)
-         * - Right RCTL : RCTRL -> RGUI   (right-hand Command)
+         * - Right mods : RALT/RCTRL -> RGUI/RALT
+         *                (mirrors the left half: the key next to the space
+         *                 is Command, the one outside it is Option)
          */
         mac_layer {
             bindings = <
@@ -55,7 +57,7 @@
 &trans    &trans   &trans    &trans    &trans    &trans      &trans    &trans    &trans    &trans    &trans    &trans
 &trans    &trans   &trans    &trans    &trans    &trans      &trans    &trans    &trans    &trans    &trans    &trans
 &trans    &trans   &trans    &trans    &trans    &trans      &trans    &trans    &trans    &trans    &trans    &trans
-&trans    &trans   &trans    &trans    &trans    &trans      &trans    &trans    &trans    &trans    &kp RGUI  &trans
+&trans    &trans   &trans    &trans    &trans    &trans      &trans    &trans    &trans    &kp RGUI  &kp RALT  &trans
                              &kp CAPS  &trans    &trans      &trans    &trans    &trans    &trans
             >;
         };
