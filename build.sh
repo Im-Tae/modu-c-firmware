@@ -84,9 +84,37 @@ mkdir -p "$OUTPUT_DIR"
 
 for shield in "${shields[@]}"; do
     echo "==> Building $shield"
+
+    # ZMK Studio talks over a USB CDC-ACM endpoint that only this snippet
+    # creates, and only the central answers it (ZMK gates the RPC on
+    # ZMK_SPLIT_ROLE_CENTRAL). Building the peripheral with it would add the
+    # USB stack to a half that never uses it.
+    snippet_name=""
+    if [ "$shield" = "modu_left" ]; then
+        snippet_name="studio-rpc-usb-uart"
+    fi
+
+    snippet_arg=""
+    if [ -n "$snippet_name" ]; then
+        snippet_arg="-S $snippet_name"
+    fi
+
+    # Changing the snippet set on an existing build dir is only a *warning* in
+    # Zephyr - it keeps the cached value, ignores the new one and builds
+    # anyway. Here that produced a Studio build with no USB endpoint at all
+    # (it fell back to the BLE transport) and still exited 0. Compare against
+    # the cache ourselves and force a pristine build when they differ.
+    prune="auto"
+    cache="$WORKSPACE/build/$shield/CMakeCache.txt"
+    if [ -f "$cache" ] &&
+       [ "$(sed -n 's/^CACHED_SNIPPET:STRING=//p' "$cache")" != "$snippet_name" ]; then
+        echo "    snippet changed since last build -> pristine"
+        prune="always"
+    fi
+
     run_in_container /ws/zmk/app "
         set -eo pipefail
-        west build -d /ws/build/$shield -b $BOARD -p auto -- \
+        west build -d /ws/build/$shield -b $BOARD -p $prune $snippet_arg -- \
             -DZMK_EXTRA_MODULES='/modu/modu-module;/modu/zmk-pmw3610-driver' \
             -DSHIELD=$shield
         python3 /modu/tools/uf2/uf2conv.py -f 0xADA52840 -c \

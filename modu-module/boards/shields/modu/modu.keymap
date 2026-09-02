@@ -16,10 +16,45 @@
 #define LOWER 2
 
 / {
+    combos {
+        compatible = "zmk,combos";
+
+        /*
+         * Hold either MO, then press the physical 5, 6 and J keys.
+         *
+         * Ported from upstream (22sh22 7ac3379), with two changes forced by
+         * how this fork's layers differ:
+         *
+         * - Layer 1 -> LOWER (2). Upstream's function layer is 1; here 1 is
+         *   mac_layer. ZMK matches combos against the *highest* active layer
+         *   (combo_active_on_layer in app/src/combo.c), so layer 1 would only
+         *   arm this while the macOS overlay is on top and MO is not held.
+         *
+         * - Position 48 -> 31. A combo swallows its keys until it resolves, so
+         *   whatever sits at those positions on this layer goes mute: a tap
+         *   only lands on release, and a held key waits out timeout-ms. On
+         *   upstream's layer 48 is &trans, but this fork moved the arrow
+         *   cluster down a row and 48 is the left-hand LEFT arrow - holding it
+         *   to walk the cursor would stall for half a second. Position 31 is
+         *   the `J` slot, &trans here: nobody types a letter while holding MO.
+         *   Note it must stay off 33 (`L`), which carries `-`.
+         *
+         * Nothing changes on the base layer - without MO held the combo is
+         * never even a candidate.
+         */
+        system_reset_combo {
+            timeout-ms = <500>;
+            key-positions = <5 6 31>;
+            bindings = <&sys_reset>;
+            layers = <LOWER>;
+        };
+    };
+
     keymap {
         compatible = "zmk,keymap";
 
         default_layer {
+            display-name = "Base";
 // -----------------------------------------------------------------------
 // |ESC | 1  | 2  | 3  | 4  | 5  |   | 6  | 7  | 8  | 9  | 0  |BSPC|
 // |TAB | Q  | W  | E  | R  | T  |   | Y  | U  | I  | O  | P  | \  |
@@ -55,6 +90,7 @@
          * Ctrl/Option/Command on the left half.
          */
         mac_layer {
+            display-name = "Mac";
             bindings = <
 &trans    &trans   &trans    &trans    &trans    &trans      &trans    &trans    &trans    &trans    &trans     &trans
 &trans    &trans   &trans    &trans    &trans    &trans      &trans    &trans    &trans    &trans    &trans     &trans
@@ -66,17 +102,24 @@
         };
 
         lower_layer {
+            display-name = "Fn";
 // -----------------------------------------------------------------------
 // | F1 | F2 | F3 | F4 | F5 | F6 |   | F7 | F8 | F9 |F10 |F11 |F12 |
-// |BTCL|BT0 |BT1 |BT2 |    |    |   |MCLK|    |    | `  | [  | ]  |
+// |BTCL|BT0 |BT1 |BT2 |STUD|    |   |MCLK|    |    | `  | [  | ]  |
 // |    |    |    |    |    |    |   |RCLK|    |    | -  | =  | '  |
 // |    | UP |    |    |MAC |    |   |LCLK|    |    |    | UP |    |
 // |LEFT|DOWN|RGHT|                            |LEFT|DOWN|RGHT|
 //
 // Arrows form a proper cross on both halves: UP sits directly above DOWN.
+
+//
+// STUD is `&studio_unlock`. ZMK Studio locks the keyboard against edits by
+// default and this is the only way to grant it - without a key bound to it
+// Studio connects but every change is refused. Placed beside the BT keys
+// because it belongs to the same "manage the device" group; move it freely.
             bindings = <
 &kp F1     &kp F2       &kp F3       &kp F4       &kp F5    &kp F6      &kp F7    &kp F8    &kp F9    &kp F10    &kp F11    &kp F12
-&bt BT_CLR &bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &trans    &trans      &mkp MCLK &trans    &trans    &kp GRAVE  &kp LBKT   &kp RBKT
+&bt BT_CLR &bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &studio_unlock &trans   &mkp MCLK &trans    &trans    &kp GRAVE  &kp LBKT   &kp RBKT
 &trans     &trans       &trans       &trans       &trans    &trans      &mkp RCLK &trans    &trans    &kp MINUS  &kp EQUAL  &kp SQT
 &trans     &kp UP       &trans       &trans       &tog MAC  &trans      &mkp LCLK &trans    &trans    &trans     &kp UP     &trans
 &kp LEFT   &kp DOWN     &kp RIGHT    &trans       &trans    &trans      &trans    &trans    &trans    &kp LEFT   &kp DOWN   &kp RIGHT
