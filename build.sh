@@ -120,6 +120,15 @@ for shield in "${shields[@]}"; do
         python3 /modu/tools/uf2/uf2conv.py -f 0xADA52840 -c \
             -o /modu/outputs/$shield.uf2 /ws/build/$shield/zephyr/zmk.hex
     "
+
+    # A successful build proves less here than usual: led_breath.c's __weak
+    # stubs link silently in place of ZMK symbols that get renamed upstream,
+    # and the firmware still comes out. The linker map is where that shows,
+    # so read it on every build rather than only when something looks wrong.
+    if [ -f "$WORKSPACE/build/$shield/zephyr/zmk.map" ]; then
+        python3 "$REPO_ROOT/tools/check-weak-stubs.py" \
+            "$WORKSPACE/build/$shield/zephyr/zmk.map"
+    fi
 done
 
 echo
