@@ -1,0 +1,69 @@
+# Copyright (c) 2026 EKS Inc.
+# Created by Ryu.
+# SPDX-License-Identifier: LicenseRef-EKS-NonCommercial-1.0
+#
+# Asks one question a local build cannot: can this firmware still be moved to a
+# newer ZMK?
+#
+# build.sh pins ZMK, so every local build uses that one revision forever and
+# upstream drift is invisible until someone tries to bump it. This firmware
+# leans on a few things ZMK does not promise to keep - `active_transport` is an
+# internal global, the __weak fallbacks in led_breath.c re-link silently if a
+# name changes, and alt_thumb_kscan.c is built on the kscan API Zephyr has
+# already deprecated. Pinning stopped those from moving underfoot; it did not
+# make them stable.
+#
+# Two jobs on purpose, so a failure says which side broke:
+#
+#   pinned   - the recorded revision. Also proves a fresh clone builds, so it
+#              catches a file that was never committed.
+#   upstream - ZMK main. This is the one that goes red first.
+#
+# Only `pinned` failing means the problem is in this repo.
+
+name: weekly build
+
+on:
+  schedule:
+    # Mondays 00:00 UTC (09:00 KST).
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+# No cache. The point is a clean fetch of whatever ZMK is today; a warm
+# workspace would hide exactly what this is looking for.
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: pinned
+            rev: ""
+          - name: upstream
+            rev: main
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build both halves
+        env:
+          MODU_ZMK_REV: ${{ matrix.rev }}
+        run: |
+          # An empty MODU_ZMK_REV would override the pin with nothing, so drop
+          # it and let build.sh use its own default.
+          if [ -z "$MODU_ZMK_REV" ]; then
+            unset MODU_ZMK_REV
+          fi
+          ./build.sh
+
+      # build.sh already runs tools/check-weak-stubs.py after each half and
+      # stops on failure, so a green build here also means no __weak stub was
+      # linked in place of a renamed ZMK symbol.
+      - name: Report
+        if: always()
+        run: |
+          echo "ZMK revision: ${MODU_ZMK_REV:-pinned in build.sh}"
+          ls -l outputs/ 2>/dev/null || echo "no outputs"
+        env:
+          MODU_ZMK_REV: ${{ matrix.rev }}
