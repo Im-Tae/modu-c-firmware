@@ -63,10 +63,16 @@ static const uint16_t white_color[3] = {BREATH_SCALE, BREATH_SCALE, BREATH_SCALE
 #endif
 
 #if MODU_IS_RIGHT_SHIELD
-/* Right wireless channel order is green, blue, red. */
-static const uint16_t right_unset_color[3] = {0, BREATH_SCALE, 0};
-static const uint16_t right_connected_color[3] = {BREATH_SCALE, 0, 0};
-static const uint16_t right_disconnected_color[3] = {0, 0, BREATH_SCALE};
+/*
+ * Right channel order is blue, green, red - the same as the left half, not the
+ * green/blue/red this file assumed until 2026-09-03. Measured, not derived:
+ * with the old values a connected right half lit blue, and only index 0 being
+ * blue explains that. The two reds below were unaffected either way, which is
+ * why the mistake survived - it only ever swapped green and blue.
+ */
+static const uint16_t right_unset_color[3] = {BREATH_SCALE, 0, 0};        /* blue */
+static const uint16_t right_connected_color[3] = {0, BREATH_SCALE, 0};    /* green */
+static const uint16_t right_disconnected_color[3] = {0, 0, BREATH_SCALE}; /* red */
 #else
 /* Hardware PWM channel order is blue, green, red. */
 static const uint16_t profile_colors[][3] = {
