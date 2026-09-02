@@ -44,7 +44,10 @@ jobs:
           - name: upstream
             rev: main
     steps:
-      - uses: actions/checkout@v4
+      # v4 runs on Node 20, which GitHub has deprecated; v5 is the first
+      # release on Node 24. A warning that fires on every run is a warning
+      # nobody reads, so it is worth the one-line bump.
+      - uses: actions/checkout@v5
 
       - name: Build both halves
         env:
