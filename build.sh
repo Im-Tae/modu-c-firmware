@@ -20,6 +20,23 @@ OUTPUT_DIR="${MODU_OUTPUT_DIR:-$REPO_ROOT/outputs}"
 IMAGE="${MODU_ZMK_IMAGE:-zmkfirmware/zmk-build-arm:stable}"
 BOARD="ms88sf3/nrf52840"
 
+# The ZMK revision this firmware is known to build against.
+#
+# Pinned on purpose. led_breath.c reaches into ZMK internals that are not part
+# of any public API - `active_transport`, and the `__weak` fallbacks for
+# zmk_ble_active_profile_index() and friends. If upstream renames one of those,
+# the weak stub links instead and the build still succeeds; the only symptom is
+# the status LED showing the wrong thing. Tracking a moving `main` would let
+# that happen silently between two builds of unchanged source.
+#
+# To try a newer ZMK without disturbing the workspace that currently works:
+#
+#   MODU_ZMK_WORKSPACE=.zmk-test MODU_ZMK_REV=main ./build.sh
+#
+# If both halves build and the LED still behaves, bump the default below to
+# that revision in its own commit.
+ZMK_REV="${MODU_ZMK_REV:-641514a97db345f499dd50b0360e594270f008fe}"
+
 if [ "${1:-}" = "--clean" ]; then
     echo "Removing $WORKSPACE"
     rm -rf "$WORKSPACE"
@@ -51,7 +68,13 @@ if [ ! -d "$WORKSPACE/zmk/zephyr" ]; then
     echo "==> Setting up the ZMK workspace in $WORKSPACE (first run only)"
     mkdir -p "$WORKSPACE"
     if [ ! -d "$WORKSPACE/zmk" ]; then
-        git clone --depth 1 https://github.com/zmkfirmware/zmk.git "$WORKSPACE/zmk"
+        # Fetch just the pinned revision. GitHub serves an arbitrary SHA to a
+        # depth-1 fetch, so this stays as cheap as the shallow clone it replaces.
+        echo "==> Fetching ZMK at $ZMK_REV"
+        git init --quiet "$WORKSPACE/zmk"
+        git -C "$WORKSPACE/zmk" remote add origin https://github.com/zmkfirmware/zmk.git
+        git -C "$WORKSPACE/zmk" fetch --depth 1 origin "$ZMK_REV"
+        git -C "$WORKSPACE/zmk" checkout --quiet FETCH_HEAD
     fi
     run_in_container /ws 'west init -l zmk/app'
     run_in_container /ws/zmk 'west update --narrow -o=--depth=1 && west zephyr-export'
