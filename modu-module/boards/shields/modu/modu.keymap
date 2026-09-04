@@ -15,6 +15,24 @@
 #define MAC   1
 #define LOWER 2
 
+/*
+ * Names for the pointing behaviours, which ZMK ships without.
+ *
+ * ⚠️ Every other behaviour carries a display-name and these two do not, so a
+ * Studio client lists them by their devicetree node names - "mouse_move",
+ * "mouse_scroll" - in the same menu as "Key Press" and "Momentary Layer".
+ *
+ * Set here rather than patched into ZMK: it is a devicetree property, and a
+ * property can be overridden from the shield.
+ */
+&mmv {
+    display-name = "Mouse Move";
+};
+
+&msc {
+    display-name = "Mouse Scroll";
+};
+
 / {
     combos {
         compatible = "zmk,combos";

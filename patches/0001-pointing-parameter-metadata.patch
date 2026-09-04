@@ -1,0 +1,120 @@
+diff --git a/app/src/behaviors/behavior_input_two_axis.c b/app/src/behaviors/behavior_input_two_axis.c
+index 40e82a8..3065692 100644
+--- a/app/src/behaviors/behavior_input_two_axis.c
++++ b/app/src/behaviors/behavior_input_two_axis.c
+@@ -9,6 +9,7 @@
+ #include <zephyr/device.h>
+ #include <drivers/behavior.h>
+ #include <zephyr/input/input.h>
++#include <zephyr/dt-bindings/input/input-event-codes.h>
+ #include <zephyr/logging/log.h>
+ #include <zephyr/sys/util.h> // CLAMP
+ 
+@@ -54,6 +55,17 @@ struct behavior_input_two_axis_config {
+     // acceleration exponent 1: uniform acceleration
+     // acceleration exponent 2: uniform jerk
+     uint8_t acceleration_exponent;
++#if IS_ENABLED(CONFIG_ZMK_BEHAVIOR_METADATA)
++    /*
++     * Per instance, not per driver.
++     *
++     * &mmv and &msc share this driver but not their numbers: MOVE_UP packs 600
++     * and SCRL_UP packs 10, both into the same 32-bit x/y pair. One static list
++     * on the driver api would hand a client the wrong four values for whichever
++     * behaviour it was not written for.
++     */
++    const struct behavior_parameter_metadata *metadata;
++#endif
+ };
+ 
+ #if CONFIG_MINIMAL_LIBC
+@@ -283,8 +295,79 @@ static int on_keymap_binding_released(struct zmk_behavior_binding *binding,
+     return 0;
+ }
+ 
++#if IS_ENABLED(CONFIG_ZMK_BEHAVIOR_METADATA)
++
++/*
++ * The four cardinal directions, for a client that has to offer a choice.
++ *
++ * ⚠️ Not the whole parameter space: param1 packs a signed x and y into 32 bits,
++ * so any speed in any direction is legal and these are only the common ones.
++ * Studio treats a value list as the allowed set, so a keymap built by hand with
++ * MOVE(300, 300) still works - it simply will not be one of the offered
++ * choices, and a client should show the raw value rather than refuse it.
++ */
++static const struct behavior_parameter_value_metadata mmv_values[] = {
++    {.display_name = "Move Up", .type = BEHAVIOR_PARAMETER_VALUE_TYPE_VALUE, .value = MOVE_UP},
++    {.display_name = "Move Down", .type = BEHAVIOR_PARAMETER_VALUE_TYPE_VALUE, .value = MOVE_DOWN},
++    {.display_name = "Move Left", .type = BEHAVIOR_PARAMETER_VALUE_TYPE_VALUE, .value = MOVE_LEFT},
++    {.display_name = "Move Right", .type = BEHAVIOR_PARAMETER_VALUE_TYPE_VALUE, .value = MOVE_RIGHT},
++};
++
++static const struct behavior_parameter_metadata_set mmv_set[] = {{
++    .param1_values = mmv_values,
++    .param1_values_len = ARRAY_SIZE(mmv_values),
++}};
++
++static const struct behavior_parameter_metadata mmv_metadata = {
++    .sets_len = ARRAY_SIZE(mmv_set),
++    .sets = mmv_set,
++};
++
++static const struct behavior_parameter_value_metadata msc_values[] = {
++    {.display_name = "Scroll Up", .type = BEHAVIOR_PARAMETER_VALUE_TYPE_VALUE, .value = SCRL_UP},
++    {.display_name = "Scroll Down", .type = BEHAVIOR_PARAMETER_VALUE_TYPE_VALUE, .value = SCRL_DOWN},
++    {.display_name = "Scroll Left", .type = BEHAVIOR_PARAMETER_VALUE_TYPE_VALUE, .value = SCRL_LEFT},
++    {.display_name = "Scroll Right", .type = BEHAVIOR_PARAMETER_VALUE_TYPE_VALUE, .value = SCRL_RIGHT},
++};
++
++static const struct behavior_parameter_metadata_set msc_set[] = {{
++    .param1_values = msc_values,
++    .param1_values_len = ARRAY_SIZE(msc_values),
++}};
++
++static const struct behavior_parameter_metadata msc_metadata = {
++    .sets_len = ARRAY_SIZE(msc_set),
++    .sets = msc_set,
++};
++
++static int get_param_metadata(const struct device *behavior,
++                              struct behavior_parameter_metadata *param_metadata) {
++    const struct behavior_input_two_axis_config *cfg = behavior->config;
++    if (!cfg->metadata) {
++        return -ENOTSUP;
++    }
++    *param_metadata = *cfg->metadata;
++    return 0;
++}
++
++#endif // IS_ENABLED(CONFIG_ZMK_BEHAVIOR_METADATA)
++
+ static const struct behavior_driver_api behavior_input_two_axis_driver_api = {
+-    .binding_pressed = on_keymap_binding_pressed, .binding_released = on_keymap_binding_released};
++    .binding_pressed = on_keymap_binding_pressed,
++    .binding_released = on_keymap_binding_released,
++#if IS_ENABLED(CONFIG_ZMK_BEHAVIOR_METADATA)
++    .get_parameter_metadata = get_param_metadata,
++#endif
++};
++
++/*
++ * Which list an instance gets, decided by the axis codes it was given rather
++ * than by its node name: the wheel codes are what makes a behaviour scrolling,
++ * and a board that declares its own two-axis behaviour should get the right
++ * list without having to be named msc.
++ */
++#define ITA_METADATA(n)                                                                            \
++    (DT_INST_PROP(n, y_input_code) == INPUT_REL_WHEEL ? &msc_metadata : &mmv_metadata)
+ 
+ #define ITA_INST(n)                                                                                \
+     static struct behavior_input_two_axis_data behavior_input_two_axis_data_##n = {};              \
+@@ -295,6 +378,8 @@ static const struct behavior_driver_api behavior_input_two_axis_driver_api = {
+         .delay_ms = DT_INST_PROP_OR(n, delay_ms, 0),                                               \
+         .time_to_max_speed_ms = DT_INST_PROP(n, time_to_max_speed_ms),                             \
+         .acceleration_exponent = DT_INST_PROP_OR(n, acceleration_exponent, 1),                     \
++        IF_ENABLED(CONFIG_ZMK_BEHAVIOR_METADATA,                                                   \
++                   (.metadata = ITA_METADATA(n),))                                                 \
+     };                                                                                             \
+     BEHAVIOR_DT_INST_DEFINE(                                                                       \
+         n, behavior_input_two_axis_init, NULL, &behavior_input_two_axis_data_##n,                  \

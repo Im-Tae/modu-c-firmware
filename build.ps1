@@ -70,6 +70,27 @@ $moduleArg = "-DZMK_EXTRA_MODULES=$(Convert-ToCMakePath $moduModule);$(Convert-T
 
 $shields = @("modu_left", "modu_right")
 
+# Patches this firmware needs in ZMK itself.
+#
+# Not applied here. build.sh owns its ZMK workspace and can restore it before
+# patching; this script builds against a checkout the user manages, and quietly
+# editing someone's own tree is worse than saying what is missing.
+#
+# Without them the firmware still builds and runs - the only symptom is that a
+# Studio client cannot offer values for the pointing behaviours, which looks
+# like the app being broken rather than the build.
+$patchDir = Join-Path $repoRoot "patches"
+if (Test-Path -LiteralPath $patchDir) {
+    $patches = Get-ChildItem -LiteralPath $patchDir -Filter *.patch -ErrorAction SilentlyContinue
+    foreach ($patch in $patches) {
+        $applied = & git -C $zmkRoot apply --reverse --check $patch.FullName 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "ZMK patch not applied: $($patch.Name)"
+            Write-Warning "  git -C `"$zmkRoot`" apply `"$($patch.FullName)`""
+        }
+    }
+}
+
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 $outputRoot = (Resolve-Path -LiteralPath $OutputDir).Path
 

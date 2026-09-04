@@ -80,6 +80,23 @@ if [ ! -d "$WORKSPACE/zmk/zephyr" ]; then
     run_in_container /ws/zmk 'west update --narrow -o=--depth=1 && west zephyr-export'
 fi
 
+# Patches to ZMK itself, re-applied from a clean tree every build.
+#
+# ⚠️ The workspace is gitignored, so anything edited there by hand is gone on
+# the next fresh checkout. A patch that lives in this repo is the only kind of
+# ZMK change that survives.
+#
+# Restoring the tree first means a half-finished build cannot leave a file
+# double-patched, and `git apply` failing for reasons unrelated to the patch.
+if [ -d "$REPO_ROOT/patches" ] && compgen -G "$REPO_ROOT/patches/*.patch" >/dev/null; then
+    echo "==> Applying ZMK patches"
+    git -C "$WORKSPACE/zmk" checkout -- . 2>/dev/null || true
+    for p in "$REPO_ROOT"/patches/*.patch; do
+        git -C "$WORKSPACE/zmk" apply "$p"
+        echo "    $(basename "$p")"
+    done
+fi
+
 mkdir -p "$OUTPUT_DIR"
 
 for shield in "${shields[@]}"; do
