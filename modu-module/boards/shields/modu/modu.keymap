@@ -66,6 +66,40 @@
             bindings = <&sys_reset>;
             layers = <LOWER>;
         };
+
+        /*
+         * Hold either MO, then press the physical 5, 6 and F keys to reboot
+         * into the UF2 bootloader - the same state the reset button reaches
+         * when tapped twice, so MODU_BOOT appears and a .uf2 can be copied.
+         *
+         * Shares the 5/6 anchors with system_reset_combo and splits on the
+         * third key: reset takes the right hand (31, `J`), this takes the
+         * left (28, `F`). Both are &trans on this layer, so neither combo
+         * mutes a key that does something here. Keeping them a hand apart
+         * is deliberate - the two outcomes are not interchangeable and a
+         * misroll should not reach the other one.
+         *
+         * A plain key was the alternative and is worse: one stray press and
+         * the keyboard sits in DFU and stops typing.
+         *
+         * ⚠️ This reboots the LEFT half only, whichever half the keys are on.
+         * &bootloader is BEHAVIOR_LOCALITY_EVENT_SOURCE, but combo.c hardcodes
+         * the binding event's source to ZMK_POSITION_STATE_CHANGE_SOURCE_LOCAL
+         * and that path invokes locally (app/src/behavior.c) - a combo has no
+         * one key position to attribute, so there is no peripheral to send it
+         * to. The right half is still flashed via its own reset button.
+         *
+         * ⚠️ This is convenience, not a rescue path. It only works while the
+         * keymap still has this layer and these positions - exactly what is
+         * missing when a bad keymap is the problem. The reset button stays
+         * the way out of that; see KEYMAP.md.
+         */
+        bootloader_combo {
+            timeout-ms = <500>;
+            key-positions = <5 6 28>;
+            bindings = <&bootloader>;
+            layers = <LOWER>;
+        };
     };
 
     keymap {
