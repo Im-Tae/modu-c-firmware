@@ -6,6 +6,7 @@ MODU-C 키보드용 ZMK 펌웨어 소스입니다.
 
 - **키 배열은 [KEYMAP.md](KEYMAP.md) 를 보세요.** 레이어별 그림과 특수 키 설명이 있습니다.
 - 키맵 원본 파일: `modu-module/boards/shields/modu/modu.keymap`
+- 키맵은 [ZMK Studio](https://zmk.studio)로 펌웨어를 다시 빌드하지 않고 고칠 수 있습니다. Fn 레이어의 `STUD` 키로 잠금을 풀어주세요. 전용 앱 LayerDeck도 준비하고 있어요.
 - 미리 빌드된 펌웨어는 GitHub Releases에서 배포합니다. **직접 고칠 게 없다면 빌드할 필요 없이 Releases에서 받아 쓰면 됩니다.**
 
 ---
